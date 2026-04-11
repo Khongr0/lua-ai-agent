@@ -1,0 +1,44 @@
+{
+  "examples": [
+    {
+      "query": "Как преобразовать структуру данных так, чтобы все элементы items в ZCDF PACKAGES всегда были представлены в виде массивов",
+      "expected_code": "function ensureArray(t)\n  if type(t) ~= \"table\" then return {t} end\n  local isArray = true\n  for k, v in pairs(t) do\n    if type(k) ~= \"number\" or math.floor(k) ~= k then\n      isArray = false\n      break\n    end\n  end\n  return isArray and t or {t}\nend\n\nfunction ensureAllItemsAreArrays(objectsArray)\n  if type(objectsArray) ~= \"table\" then return objectsArray end\n  for _, obj in ipairs(objectsArray) do\n    if type(obj) == \"table\" and obj.items then\n      obj.items = ensureArray(obj.items)\n    end\n  end\n  return objectsArray\nend"
+    },
+    {
+      "query": "Напиши функцию на Lua которая проверяет, является ли таблица массивом (т.е. все ключи целые числа)",
+      "expected_code": "function isArray(t)\n  if type(t) ~= \"table\" then return false end\n  for k, v in pairs(t) do\n    if type(k) ~= \"number\" or math.floor(k) ~= k then\n      return false\n    end\n  end\n  return true\nend"
+    },
+    {
+      "query": "Напиши функцию, которая возвращает квадрат числа",
+      "expected_code": "function powerTwo(n)\n  return n * n\nend"
+    },
+    {
+      "query": "Из полученного списка email получи последний.",
+      "expected_code": "return wf.vars.emails[#wf.vars.emails]"
+    },
+    {
+      "query": "Увеличивай значение переменной try_count_n на каждой итерации",
+      "expected_code": "return wf.vars.try_count_n + 1"
+    },
+    {
+      "query": "Преобразуй время из формата 'YYYYMMDD' и 'HHMMSS' в строку в формате ISO 8601 с использованием Lua",
+      "expected_code": "local DATUM = wf.vars.json.IDOC.ZCDF_HEAD.DATUM\nlocal TIME = wf.vars.json.IDOC.ZCDF_HEAD.TIME\nlocal function safe_sub(str, start, finish)\n  local s = string.sub(str, start, math.min(finish, #str))\n  return s ~= \"\" and s or \"00\"\nend\nlocal year = safe_sub(DATUM, 1, 4)\nlocal month = safe_sub(DATUM, 5, 6)\nlocal day = safe_sub(DATUM, 7, 8)\nlocal hour = safe_sub(TIME, 1, 2)\nlocal minute = safe_sub(TIME, 3, 4)\nlocal second = safe_sub(TIME, 5, 6)\nlocal iso_date = string.format('%s-%s-%sT%s:%s:%s.00000Z', year, month, day, hour, minute, second)\nreturn iso_date"
+    },
+    {
+      "query": "Как преобразовать структуру данных так, чтобы все элементы items в ZCDF_PACKAGES всегда были представлены в виде массивов, даже если они изначально не являются массивами",
+      "expected_code": "function ensureArray(t)\n  if type(t) ~= \"table\" then return {t} end\n  local isArray = true\n  for k, v in pairs(t) do\n    if type(k) ~= \"number\" or math.floor(k) ~= k then\n      isArray = false\n      break\n    end\n  end\n  return isArray and t or {t}\nend\n\nfunction ensureAllItemsAreArrays(objectsArray)\n  if type(objectsArray) ~= \"table\" then return objectsArray end\n  for _, obj in ipairs(objectsArray) do\n    if type(obj) == \"table\" and obj.items then\n      obj.items = ensureArray(obj.items)\n    end\n  end\n  return objectsArray\nend"
+    },
+    {
+      "query": "Отфильтруй элементы из массива, чтобы включить только те, у которых есть значения в полях Discount или Markdown.",
+      "expected_code": "function filterByDiscountOrMarkdown(items)\n  local result = {}\n  for _, item in ipairs(items) do\n    if (item.Discount and item.Discount ~= \"\" and item.Discount ~= 0) or (item.Markdown and item.Markdown ~= \"\" and item.Markdown ~= 0) then\n      table.insert(result, item)\n    end\n  end\n  return result\nend"
+    },
+    {
+      "query": "Добавь переменную с квадратом числа",
+      "expected_code": "local num = tonumber('5')\nlocal squared = num * num\nreturn squared"
+    },
+    {
+      "query": "Конвертируй время в переменной recallTime в unix-формат",
+      "expected_code": "local iso_time = wf.initVariables.recallTime\nlocal days_in_month = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}\nif not iso_time or not iso_time:match(\"^%d%d%d%d%-%d%d%-%d%dT\") then\n  return nil\nend\nlocal function is_leap_year(year)\n  return (year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0)\nend\nlocal function days_since_epoch(year, month, day)\n  local days = 0\n  for y = 1970, year - 1 do\n    days = days + (is_leap_year(y) and 366 or 365)\n  end\n  for m = 1, month - 1 do\n    days = days + days_in_month[m]\n    if m == 2 and is_leap_year(year) then\n      days = days + 1\n    end\n  end\n  days = days + (day - 1)\n  return days\nend\nlocal function parse_iso8601_to_epoch(iso_str)\n  if not iso_str then error(\"Дата не задана (nil)\") end\n  local year, month, day, hour, min, sec, ms, offset_sign, offset_hour, offset_min = iso_str:match(\"(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)%.(%d+)([+-])(%d+):(%d+)\")\n  if not year then\n    year, month, day, hour, min, sec, offset_sign, offset_hour, offset_min = iso_str:match(\"(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)([+-])(%d+):(%d+)\")\n    ms = 0\n  end\n  if not year then error(\"Невозможно разобрать дату: \" .. tostring(iso_str)) end\n  year = tonumber(year); month = tonumber(month); day = tonumber(day)\n  hour = tonumber(hour); min = tonumber(min); sec = tonumber(sec)\n  ms = tonumber(ms) or 0\n  offset_hour = tonumber(offset_hour); offset_min = tonumber(offset_min)\n  local total_days = days_since_epoch(year, month, day)\n  local total_seconds = total_days * 86400 + hour * 3600 + min * 60 + sec\n  local offset_seconds = offset_hour * 3600 + offset_min * 60\n  if offset_sign == \"-\" then offset_seconds = -offset_seconds end\n  return total_seconds - offset_seconds\nend\nlocal epoch_seconds = parse_iso8601_to_epoch(iso_time)\nreturn epoch_seconds"
+    }
+  ]
+}
