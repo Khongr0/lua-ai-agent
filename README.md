@@ -42,11 +42,13 @@ output.lua # сгенерированный код
 ```bash
 pip install numpy scikit-learn
 brew install ollama
-'''
- Запуск
-'''bash
+```
+
+## Запуск
+
+```bash
 python main.py
-'''
+```
 Внутри файла можно поменять запрос:
 query = "Из полученного списка email получи последний"
  Пример работы
