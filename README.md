@@ -47,7 +47,7 @@ brew install ollama
 ## Запуск
 
 ```bash
-python main.py
+python run.py
 ```
 Внутри файла можно поменять запрос:
 query = "Из полученного списка email получи последний"
