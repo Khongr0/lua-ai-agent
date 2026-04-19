@@ -15,7 +15,7 @@ class RAGRetriever:
     
     def __init__(self, test_file_path="test_examples.json"):
         self.test_file_path = test_file_path
-        self.chunks = []          # список чанков (текст задачи + код)
+        self.chunks = []         
         self.vectorizer = None
         self.tfidf_matrix = None
         
@@ -25,15 +25,12 @@ class RAGRetriever:
     def _load_and_index(self):
         """Загружает тестовые задания и строит TF-IDF индекс"""
         if not Path(self.test_file_path).exists():
-            print(f"⚠️ Файл {self.test_file_path} не найден, RAG отключён")
+            print(f" Файл {self.test_file_path} не найден, RAG отключён")
             return
         
-        # Загружаем JSON (предполагаем структуру как в примере)
         with open(self.test_file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        # Извлекаем все пары (запрос, ожидаемый код)
-        # Адаптируйте под структуру вашего файла
         for item in data.get("examples", []):
             query = item.get("query", "")
             code = item.get("expected_code", "")
@@ -41,28 +38,24 @@ class RAGRetriever:
                 self.chunks.append({
                     "query": query,
                     "code": code,
-                    "text": query + " " + code  # для поиска
+                    "text": query + " " + code  
                 })
         
-        # Если нет структуры, можно распарсить текстовый файл
-        # (альтернативный метод ниже)
         if not self.chunks:
             self._parse_text_file()
         
-        # Строим TF-IDF матрицу (легковесно, без внешних API)
+        # Строим TF-IDF матрицу 
         if self.chunks:
             texts = [chunk["text"] for chunk in self.chunks]
             self.vectorizer = TfidfVectorizer(stop_words=None, max_features=500)
             self.tfidf_matrix = self.vectorizer.fit_transform(texts)
-            print(f"✅ Загружено {len(self.chunks)} примеров для RAG")
+            print(f" Загружено {len(self.chunks)} примеров для RAG")
     
     def _parse_text_file(self):
         """Если файл в текстовом формате (как в примере) — извлекаем пары"""
         with open(self.test_file_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Ищем блоки "Запрос пользователя" и "Ожидаемый ответ"
-        # Это эвристика под ваш файл
         pattern = r"Запрос пользователя\s*\n(.*?)\n.*?Ожидаемый ответ\s*\n(.*?)(?=\n\w|$)"
         matches = re.findall(pattern, content, re.DOTALL)
         
@@ -180,12 +173,10 @@ REMEMBER: Production-ready code only. No placeholders. No "TODO" comments."""
         if code_blocks:
             return code_blocks[0].strip()
 
-        # Если нет маркера lua, ищем любой блок кода
         code_blocks = re.findall(r'```\n(.*?)```', llm_output, re.DOTALL)
         if code_blocks:
             return code_blocks[0].strip()
 
-        # Если нет блоков, возможно весь ответ - это код
         return llm_output.strip()
 
     def _validate_code(self, code):
@@ -204,7 +195,7 @@ REMEMBER: Production-ready code only. No placeholders. No "TODO" comments."""
 
     def run(self, user_query):
         """Главный цикл агента."""
-        print(f"🤖 Получен запрос: {user_query}")
+        print(f" Получен запрос: {user_query}")
         self.conversation_history = []  # Сбрасываем историю для нового запроса
 
         # 1. Ищем похожие примеры из тестового файла
@@ -226,14 +217,14 @@ REMEMBER: Production-ready code only. No placeholders. No "TODO" comments."""
         # Шаг 1: Планирование
         plan_prompt = f"Create a plan to write Lua code for the following task: {user_query}"
         plan = self._call_llm(plan_prompt)
-        print(f"📝 План: {plan[:200]}...")
+        print(f" План: {plan[:200]}...")
 
         # Шаг 2: Генерация и итеративное улучшение
         current_code = ""
         last_validation_feedback = ""
 
         for i in range(self.max_iterations):
-            print(f"🔄 Итерация {i+1}: Генерация/Улучшение кода...")
+            print(f" Итерация {i+1}: Генерация/Улучшение кода...")
 
             # Генерация (или рефакторинг)
             if i == 0:
@@ -270,14 +261,14 @@ Return complete fixed code in ```lua block"""
             current_code = self._extract_code(llm_output)
 
             if not current_code:
-                print("  ❌ Не удалось извлечь код")
+                print("   Не удалось извлечь код")
                 continue
 
-            print(f"  📄 Сгенерирован код ({len(current_code)} символов)")
+            print(f"   Сгенерирован код ({len(current_code)} символов)")
 
             # Шаг 3: Валидация
             is_valid, validation_feedback = self._validate_code(current_code)
-            print(f"🔍 Результат валидации: {'✅ Успешно' if is_valid else '❌ Ошибка'}")
+            print(f" Результат валидации: {' Успешно' if is_valid else ' Ошибка'}")
 
             if is_valid:
                 print("✅ Код успешно прошел проверку!")
@@ -285,19 +276,18 @@ Return complete fixed code in ```lua block"""
 
             # Если есть ошибки, готовим фидбек для следующей итерации
             last_validation_feedback = validation_feedback
-            print(f"⚠️ Найдены проблемы: {last_validation_feedback[:200]}")
+            print(f" Найдены проблемы: {last_validation_feedback[:200]}")
 
-        print(f"❌ Не удалось получить валидный код после {self.max_iterations} итераций.")
+        print(f" Не удалось получить валидный код после {self.max_iterations} итераций.")
         return current_code, False, self.conversation_history
 
 
 if __name__ == "__main__":
-    # Проверяем наличие модели
     try:
         result = subprocess.run(['ollama', 'list'], capture_output=True, text=True)
-        print("✅ Ollama найден")
+        print(" Ollama найден")
     except Exception:
-        print("❌ Ollama не установлен. Установите: brew install ollama")
+        print(" Ollama не установлен. Установите: brew install ollama")
         sys.exit(1)
 
     # Создаем агента
@@ -316,11 +306,11 @@ if __name__ == "__main__":
     print("=" * 50)
 
     if success:
-        print("✅ СТАТУС: Успешно сгенерирован и проверен")
+        print(" СТАТУС: Успешно сгенерирован и проверен")
     else:
-        print("⚠️ СТАТУС: Сгенерирован с ошибками")
+        print(" СТАТУС: Сгенерирован с ошибками")
 
     # Сохраняем код в файл
     with open('output.lua', 'w') as f:
         f.write(final_code)
-    print("💾 Код сохранен в output.lua")
+    print("💾Код сохранен в output.lua")
